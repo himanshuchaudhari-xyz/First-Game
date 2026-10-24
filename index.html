@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f9f5ee">
+  <title>Rizzler — Dodge the love</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><a class="brand" href="./">rizzler<span>✳</span></a><span class="edition">A LITTLE ARCADE CRUSH</span><button id="soundless" type="button" title="Pause or resume">Ⅱ <span>Pause</span></button></header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">BIG CHARM. QUICK FEET.</p><h1>Dodge the love.</h1><p>Hearts are flying. Keep your cool.</p></div><div class="badge">100% CHARM<br><b>0% DRAMA</b><span>↙</span></div></div>
+    <section class="game" aria-label="Rizzler arcade game">
+      <div class="hud"><div><small>LEVEL</small><strong id="level">01</strong></div><div><small>SCORE</small><strong id="score">00000</strong></div><div><small>LIVES</small><strong id="lives" class="hearts">♥ ♥ ♥</strong></div><div class="timer"><small>NEXT LEVEL</small><strong id="time">20<span>s</span></strong></div></div>
+      <div class="stage"><canvas id="canvas" width="960" height="500" aria-label="Move with A and D or arrows. Jump with Space or Up."></canvas>
+        <div id="overlay" class="overlay"><div class="overlay-card"><span class="pill" id="pill">THE CHASE IS ON</span><h2 id="title">Meet your<br><em>heart dodger.</em></h2><p id="message">A little attention goes a long way.<br>Three lives. Endless admirers. Stay on your toes.</p><button class="primary" id="play">Let's play <span>↗</span></button><p class="hint" id="hint">PRESS ENTER TO START</p></div></div>
+        <div id="announcement" class="announcement" role="status"></div>
+      </div>
+      <div class="game-footer"><span><i></i><span id="status">READY WHEN YOU ARE</span></span><span>LOVE IS IN THE AIR. LITERALLY.</span></div>
+    </section>
+    <div class="instructions"><div><span class="key">A</span><span class="key">D</span><span class="or">/</span><span class="key">←</span><span class="key">→</span><span class="label">Move</span></div><div><span class="key wide">SPACE</span><span class="or">/</span><span class="key">↑</span><span class="label">Jump</span></div><p>Catch feelings? <b>Try dodging them.</b></p></div>
+    <div class="touch"><button data-key="ArrowLeft" aria-label="Move left">←</button><button data-key="ArrowRight" aria-label="Move right">→</button><button data-key="Space" aria-label="Jump">Jump ↑</button></div>
+  </main><footer><span>MADE FOR A LITTLE ESCAPE</span><span>NO BROKEN HEARTS. JUST HIGH SCORES. ♡</span></footer>
+  <script src="game.js"></script>
+</body>
+</html>
