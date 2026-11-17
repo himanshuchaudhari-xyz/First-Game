@@ -8,27 +8,27 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header><a class="brand" href="./">rizzler<span>✳</span></a><span class="edition">THE LONG WAY TO GG</span><button id="pause" type="button">Ⅱ Pause</button></header>
+  <header><a class="brand" href="./">rizzler<span>✳</span></a><span class="edition">A LITTLE WALK TO GG</span><button id="pause" type="button">Ⅱ Pause</button></header>
   <main>
-    <div class="intro"><div><p class="eyebrow">BIG JUMPS. LITTLE MOMENTS.</p><h1>Go the distance for GG.</h1><p>One big world. A few little detours. Your favourite person at the finish.</p></div><div class="badge">BIG ADVENTURE<br><b>SWEET MOMENTS</b><span>♡</span></div></div>
-    <section class="game" aria-label="Rizzler platform adventure">
+    <div class="intro"><div><p class="eyebrow">LITTLE GESTURES. LOVELY EVENINGS.</p><h1>On my way to you.</h1><p>A few flowers, a little drizzle, and GG at your favourite spot.</p></div><div class="badge">JUST US TWO<br><b>SWEET MOMENTS</b><span>♡</span></div></div>
+    <section class="game" aria-label="Rizzler romantic garden walk">
       <div class="hud">
-        <div><small>WORLD</small><strong id="level">01</strong></div>
+        <div><small>EVENING</small><strong id="level">01</strong></div>
         <div><small>SCORE</small><strong id="score">00000</strong></div>
         <div class="balance"><small>BALANCE <span id="health">100%</span></small><div id="meter" role="progressbar" aria-label="Balance" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="fill"></i></div></div>
-        <div class="timer"><small id="clock-label">RUN TIME</small><strong id="time">0s</strong></div>
+        <div class="timer"><small id="clock-label">STROLL TIME</small><strong id="time">0s</strong></div>
       </div>
       <div class="objectives" id="objectives" aria-label="Today's objectives"></div>
       <div class="stage">
-        <canvas id="canvas" width="960" height="500" aria-label="Scrolling platform game. Move with A/D or arrows and hold Space or Up to jump farther. Cross gaps, avoid puddles, collect stars, and reach GG at the finish."></canvas>
-        <div id="overlay" class="overlay"><div class="overlay-card"><span class="pill" id="pill">A SCROLLING PLATFORM ADVENTURE</span><h2 id="title">Big adventure.<br><em>Sweet ending.</em></h2><p id="message">Cross the meadows, canal, and sky gardens to find GG.<br>Leap over gaps, bounce on slimes, and collect stars.<br><b>A/D to run · Hold Space for a bigger jump · Flags save progress.</b></p><button class="primary" id="play">Let’s adventure ↗</button><p class="hint">ENTER TO START · ESC TO PAUSE</p></div></div>
+        <canvas id="canvas" width="960" height="500" aria-label="Garden walk. Move in four directions with WASD or arrows. Pick three marked flowers with E, read optional notes, and meet GG at the rose arch on the right. Hold Space for an umbrella in the rain."></canvas>
+        <div id="overlay" class="overlay"><div class="overlay-card"><span class="pill" id="pill">A LITTLE LOVE STORY</span><h2 id="title">For the little<br><em>things we do.</em></h2><p id="message">Gather three flowers on a short sunset stroll.<br>Read little notes, cross the bridge, and meet GG.<br><b>WASD / arrows to walk · E to pick / read · Hold Space for an umbrella.</b></p><button class="primary" id="play">Let’s take a walk ♡</button><p class="hint">ENTER TO START · ESC TO PAUSE</p></div></div>
         <div id="announcement" class="announcement" role="status"></div>
         <button id="skip" class="skip" hidden>Skip scene →</button>
       </div>
       <div class="game-footer"><span id="status" role="status">READY WHEN YOU ARE</span><span id="scene-note">A LITTLE EFFORT. A LITTLE TIME TOGETHER.</span></div>
     </section>
-    <div class="instructions"><div><span class="key">A</span><span class="key">D</span><span class="or">/</span><span class="key">←</span><span class="key">→</span><span class="label">Move</span></div><div><span class="key wide">SPACE</span><span class="label">Jump</span></div><div><span class="key">⚑</span><span class="label">Checkpoints save progress</span></div><p>Hold jump. <b>Go a little further.</b></p></div>
-    <div class="touch" aria-label="Touch controls"><button data-key="ArrowLeft" aria-label="Move left">←</button><button data-key="ArrowRight" aria-label="Move right">→</button><button data-key="Space">Jump</button></div>
+    <div class="instructions"><div><span class="key wide">WASD / ↑↓←→</span><span class="label">Stroll</span></div><div><span class="key">E</span><span class="label">Pick / read / talk</span></div><div><span class="key wide">SPACE</span><span class="label">Hold umbrella</span></div><p>Take your time. <b>She’s worth the little walk.</b></p></div>
+    <div class="touch" aria-label="Touch controls"><div class="dpad"><button data-key="ArrowUp" aria-label="Walk up">↑</button><button data-key="ArrowLeft" aria-label="Walk left">←</button><button data-key="ArrowDown" aria-label="Walk down">↓</button><button data-key="ArrowRight" aria-label="Walk right">→</button></div><button data-key="KeyE">Pick / talk</button><button data-key="Space">Hold ☂</button></div>
   </main><footer><span>MADE FOR A LITTLE ESCAPE</span><span>STARRING YOU & GG ♡</span></footer>
   <script src="game.js"></script>
 </body>

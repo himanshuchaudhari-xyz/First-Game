@@ -1,102 +1,81 @@
 'use strict';
 const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
 const ui=Object.fromEntries(['level','score','health','fill','meter','time','clock-label','objectives','overlay','title','message','play','pill','status','scene-note','announcement','skip','pause'].map(id=>[id,document.getElementById(id)]));
-const W=960,H=500,FLOOR=430,WORLD=6800,GOAL=6570,keys=new Set();
+const W=960,H=500,WORLD=1920,MAP_H=700,GOAL=1780,keys=new Set();
 const dates=[{title:'A sweet surprise for GG',item:'Cookies ’n’ Creme',lines:['You: A little something for you, GG.','GG: My favourite! You remembered.','You: One pack. Two very happy people.','GG: The best part is spending time with you.']},{title:'Dinner for two',item:'Dinner date',lines:['You: A table for us, away from the busy day.','GG: This smells amazing. Let’s dig in!','You: Tell me the best part of your day.','GG: A toast to little moments like this.']},{title:'Just one more scene',item:'Movie night',lines:['GG: Popcorn? Check. Favourite person? Check.','You: Our tiny astronaut is going places!','GG: That moon is definitely made of cheese.','You: Five stars for the company.']},{title:'The long way home',item:'Sunset drive',lines:['You: Seat belts on. Nowhere to rush.','GG: This song! Turn it up a little.','You: Look at that sunset, GG.','GG: Let’s take the scenic route again.']}];
-const courseNames=['Sunlit Meadows','Canal Gardens','Twilight Heights'];
+const gardens=['Peach-sky park','Lavender evening','Moonlit garden'];
+const pond={x:790,y:400,rx:150,ry:110};
 let mode='ready',paused=false,level=1,score=0,balance=100,dayTime=0,sceneTime=0,sceneIndex=0,clock=0,last=0,notice=0;
-let player,solids,coins,slimes,puddles,flags,checkpoint,camera=0,farthest=70,collected=0,hurt=0,jumpBuffer=0,coyote=0,particles=[];
+let player,flowers,notes,rain,camera=0,cameraY=0,collected=0,particles=[],messageStage=0;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function buildMap(){
-  solids=[];coins=[];slimes=[];puddles=[];flags=[1850,3540,5200].map(x=>({x,active:false}));checkpoint=70;camera=0;farthest=70;collected=0;hurt=0;jumpBuffer=0;coyote=0;particles=[];
-  const shift=(level-1)%3*18,gaps=[[820,980],[1570,1740],[2440,2620],[3270,3460],[4150,4330],[4930,5120],[5680,5850]].map(([a,b],i)=>[a+(i%2?shift:-shift),b+(i%2?shift:-shift)]);
-  let edge=0;for(const [a,b] of [...gaps,[WORLD,WORLD]]){solids.push({x:edge,y:FLOOR,w:a-edge,h:150,kind:'ground'});edge=b;}
-  for(const [x,y,w] of [[450,375,85],[1200,350,80],[2030,365,95],[2840,340,90],[3720,360,100],[4550,350,85],[5390,365,90],[6100,355,100]])solids.push({x:x+shift,y,w,h:FLOOR-y,kind:'crate'});
-  for(let i=0;i<gaps.length;i++){
-    const [a,b]=gaps[i];solids.push({x:a+25,y:328,w:b-a-50,h:18,kind:i%2?'moving':'ledge',base:a+25,phase:i});
-    for(let k=0;k<4;k++)coins.push({x:a-20+k*(b-a+40)/3,y:290-Math.sin(k/3*Math.PI)*30,taken:false});
-  }
-  for(const [x,y] of [[530,275],[660,215],[1330,255],[2130,270],[2930,245],[3830,265],[4650,255],[5480,270],[6220,260]]){
-    solids.push({x:x+shift,y,w:95,h:22,kind:'gift',used:false});
-    for(let j=0;j<3;j++)coins.push({x:x+shift+18+j*28,y:y-35,taken:false});
-  }
-  for(let x=200;x<6400;x+=220){if(!gaps.some(([a,b])=>x>a-25&&x<b+25)&&!solids.some(s=>s.kind==='crate'&&x>s.x-30&&x<s.x+s.w+30))coins.push({x,y:382,taken:false});}
-  for(const [a,b] of [[1030,1150],[1810,1970],[2650,2780],[3510,3660],[4380,4490],[5220,5340],[5920,6050]])slimes.push({x:a,y:FLOOR,base:a,range:b-a,phase:slimes.length*1.7,dead:false});
-  puddles=[{x:2230,w:66},{x:3980,w:70},{x:6380,w:65}];
-  player={x:70,y:FLOOR,vx:0,vy:0,grounded:true,riding:null};dayTime=0;keys.clear();
+  flowers=[{x:370,y:480,name:'A rose for GG',color:'#d17e8a',taken:false},{x:1010,y:245,name:'A little lavender',color:'#a08dbb',taken:false},{x:1320,y:505,name:'A sunny daisy',color:'#e2b862',taken:false}];
+  notes=[{x:560,y:265,read:false,text:'GG: No rush. I saved our favourite spot for us.'},{x:1430,y:260,read:false,text:'You: The little things remind me of you, GG.'}];
+  rain={x:1160,y:450,r:78};player={x:95,y:435,vx:0,vy:0};camera=0;cameraY=140;collected=0;dayTime=0;particles=[];messageStage=0;keys.clear();
 }
 function reset(){level=1;score=0;balance=100;sceneTime=0;sceneIndex=0;clock=0;last=0;notice=0;paused=false;mode='ready';buildMap();ui.skip.hidden=true;ui.announcement.classList.remove('visible');refresh();}
-function start(){reset();mode='run';ui.overlay.hidden=true;announce('World 1 · '+courseNames[0]);refresh();}
+function start(){reset();mode='walk';ui.overlay.hidden=true;announce('GG: Meet me under the rose arch ♡',4);refresh();}
 function showOverlay(title,message,label,pill){ui.title.innerHTML=title;ui.message.innerHTML=message;ui.play.textContent=label;ui.pill.textContent=pill;ui.overlay.hidden=false;}
-function announce(value){ui.announcement.textContent=value;notice=2.3;}
+function announce(value,seconds=3){ui.announcement.textContent=value;notice=seconds;}
 function currentDate(){return level===1?0:1+(level-2)%3;}
-function beginDate(){mode='date';sceneIndex=currentDate();sceneTime=0;player.vx=0;keys.clear();notice=0;ui.announcement.classList.remove('visible');ui.skip.hidden=false;score+=500;refresh();}
-function finishDate(){if(mode!=='date'||paused)return;balance=100;score+=150;sceneTime=0;level++;mode='run';ui.skip.hidden=true;buildMap();announce('World '+level+' · Balance full!');refresh();}
-function togglePause(){if(mode!=='run'&&mode!=='date')return;paused=!paused;keys.clear();jumpBuffer=0;last=0;if(paused)showOverlay('Take a breather.','Your adventure will be right here.','Resume','PAUSED');else ui.overlay.hidden=true;refresh();}
+function beginDate(){mode='date';sceneIndex=currentDate();sceneTime=0;player.vx=0;player.vy=0;keys.clear();notice=0;ui.announcement.classList.remove('visible');ui.skip.hidden=false;score+=300;refresh();}
+function finishDate(){if(mode!=='date'||paused)return;balance=100;score+=150;sceneTime=0;level++;mode='walk';ui.skip.hidden=true;buildMap();announce('A new evening · Balance full ♡');refresh();}
+function togglePause(){if(mode!=='walk'&&mode!=='date')return;paused=!paused;keys.clear();last=0;if(paused)showOverlay('Stay a little.','Your evening will be right here.','Resume','PAUSED');else ui.overlay.hidden=true;refresh();}
 ui.play.onclick=()=>paused?togglePause():start();ui.pause.onclick=togglePause;ui.skip.onclick=finishDate;
-const controls=['ArrowLeft','ArrowRight','ArrowUp','Space','KeyA','KeyD','KeyE'];
-function press(code){keys.add(code);if((code==='Space'||code==='ArrowUp')&&mode==='run'&&!paused)jumpBuffer=.14;}
-function release(code){keys.delete(code);if((code==='Space'||code==='ArrowUp')&&player.vy<-300)player.vy*=.6;}
+const controls=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyA','KeyD','KeyW','KeyS','KeyE'];
+function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function nearest(){
+  const targets=[...flowers.filter(f=>!f.taken).map(item=>({kind:'flower',item})),...notes.map(item=>({kind:'note',item})),{kind:'gg',item:{x:GOAL,y:390}}];
+  return targets.filter(t=>distance(player,t.item)<76).sort((a,b)=>distance(player,a.item)-distance(player,b.item))[0];
+}
+function interact(){
+  if(mode!=='walk'||paused||document.hidden)return;const target=nearest();if(!target)return;
+  if(target.kind==='flower'){target.item.taken=true;collected++;score+=75;balance=Math.min(100,balance+4);burst(target.item.x,target.item.y,'#e7a4b0');announce(collected===3?'A whole bouquet. Now find GG under the rose arch ♡':target.item.name+' · '+collected+'/3 flowers');}
+  else if(target.kind==='note'){if(!target.item.read){target.item.read=true;score+=25;}announce(target.item.text,5);}
+  else if(collected===3){beginDate();}else announce('GG: A bouquet? There are '+(3-collected)+' flowers left along the path ♡',4);
+  refresh();
+}
+function press(code){keys.add(code);if(code==='KeyE')interact();}
+function release(code){keys.delete(code);}
 addEventListener('keydown',e=>{if(controls.includes(e.code)){e.preventDefault();if(!e.repeat)press(e.code);}if(e.code==='Enter'&&!e.repeat&&e.target.tagName!=='BUTTON'){if(paused)togglePause();else if(mode==='ready'||mode==='over')start();}if(e.code==='Escape'&&!e.repeat)togglePause();});
 addEventListener('keyup',e=>release(e.code));
-addEventListener('blur',()=>{keys.clear();if((mode==='run'||mode==='date')&&!paused)togglePause();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&(mode==='run'||mode==='date')&&!paused)togglePause();last=0;});
+addEventListener('blur',()=>{keys.clear();if((mode==='walk'||mode==='date')&&!paused)togglePause();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&(mode==='walk'||mode==='date')&&!paused)togglePause();last=0;});
 document.querySelectorAll('[data-key]').forEach(button=>{button.onpointerdown=e=>{e.preventDefault();button.setPointerCapture(e.pointerId);press(button.dataset.key);};button.onpointerup=button.onpointercancel=button.onlostpointercapture=()=>release(button.dataset.key);});
 function refresh(){
   ui.level.textContent=String(level).padStart(2,'0');ui.score.textContent=String(Math.floor(score)).padStart(5,'0');const hp=Math.ceil(balance);
   ui.health.textContent=hp+'%';ui.fill.style.width=balance+'%';ui.fill.classList.toggle('low',balance<30);ui.meter.setAttribute('aria-valuenow',hp);
-  ui['clock-label'].textContent=mode==='date'?'SCENE LEFT':'RUN TIME';ui.time.textContent=(mode==='date'?Math.ceil(20-sceneTime):Math.floor(dayTime))+'s';
-  const progress=Math.min(100,Math.floor((farthest-70)/(GOAL-70)*100));
-  const objectives='<span class="objective">'+courseNames[(level-1)%3]+'</span><span class="objective">★ '+collected+' / '+coins.length+'</span><span class="objective">⚑ '+flags.filter(f=>f.active).length+' / 3</span><span class="objective route"><span style="width:'+progress+'%"></span></span><span class="objective">'+progress+'% → GG</span>';
+  ui['clock-label'].textContent=mode==='date'?'SCENE LEFT':'TIME TOGETHER';ui.time.textContent=(mode==='date'?Math.ceil(20-sceneTime):Math.floor(dayTime))+'s';
+  const objectives='<span class="objective">'+gardens[(level-1)%3]+'</span><span class="objective">♡ Bouquet '+collected+' / 3</span><span class="objective">✉ '+notes.filter(n=>n.read).length+' / 2 notes</span><span class="objective">'+(collected===3?'Meet GG at the rose arch →':'Find the three marked flowers')+'</span>';
   if(ui.objectives.innerHTML!==objectives)ui.objectives.innerHTML=objectives;
   ui.pause.textContent=paused?'▶ Resume':'Ⅱ Pause';ui.pause.disabled=mode==='ready'||mode==='over';ui.skip.disabled=paused;
-  ui['scene-note'].textContent=mode==='date'?'BALANCE REFILLS AFTER YOUR TIME TOGETHER':'REWARD: '+dates[currentDate()].item.toUpperCase();
-  let status='A/D to run · Hold jump for longer leaps · Stars are optional';
-  if(mode==='ready')status='A BIG ADVENTURE FOR A LITTLE TIME TOGETHER';else if(mode==='over')status='TAKE A BREATH. TRY ANOTHER RUN.';else if(paused)status='PAUSED · RESUME WHEN YOU’RE READY';else if(mode==='date')status=dates[sceneIndex].lines[Math.min(3,Math.floor(sceneTime/5))];else if(player.x>GOAL-130)status='GG: You made it! Come here ♡';else if(player.x>4200)status='THE SKY GARDENS · Moving ledges, springs, one last stretch!';else if(player.x>2200)status='THE CANAL · Watch the gaps. Checkpoint flags save your progress.';
+  ui['scene-note'].textContent=mode==='date'?'BALANCE REFILLS AFTER YOUR TIME TOGETHER':'TONIGHT: '+dates[currentDate()].item.toUpperCase();
+  let status='WASD / arrows: stroll · E: pick / read · Hold Space: umbrella';const target=nearest();
+  if(mode==='ready')status='A SHORT WALK. A LITTLE THOUGHT. A MOMENT WITH GG.';else if(mode==='over')status='A FRESH EVENING IS JUST A CLICK AWAY.';else if(paused)status='PAUSED · TAKE YOUR TIME';else if(mode==='date')status=dates[sceneIndex].lines[Math.min(3,Math.floor(sceneTime/5))];
+  else if(target)status=target.kind==='flower'?'E · Pick '+target.item.name:target.kind==='note'?'E · Read a little note':collected===3?'E · Give GG the bouquet and spend time together':'GG is here. Finish your bouquet, then press E ♡';
+  else if(distance(player,rain)<rain.r)status=keys.has('Space')?'A little rain, a little shelter. Keep strolling ♡':'A passing shower · Hold Space to open your umbrella';
   if(ui.status.textContent!==status)ui.status.textContent=status;
 }
-function burst(x,y,color='#f3bd58'){for(let i=0;i<10;i++)particles.push({x,y,vx:Math.cos(i)*90,vy:-70+Math.sin(i)*90,life:.6,color});}
-function damage(amount,respawn=false){
-  if(hurt>0&&!respawn&&balance>0)return;balance=Math.max(0,balance-amount);hurt=1.5;burst(player.x,Math.min(player.y-25,450),'#eaa193');
-  if(balance<=0){mode='over';keys.clear();showOverlay('A little stumble.<br><em>A fresh adventure.</em>','GG: Take your time. I’m cheering for you.<br>World '+level+' · '+Math.floor(score)+' points','Try again ↗','LET’S GO AGAIN');return;}
-  if(respawn){player.x=checkpoint;player.y=FLOOR;player.vx=0;player.vy=0;player.grounded=true;player.riding=null;camera=clamp(player.x-260,0,WORLD-W);jumpBuffer=0;coyote=0;announce('Back to your checkpoint · Keep going!');}
-  else{player.vy=-340;player.grounded=false;}
-}
-function overlap(s){return player.x+12>s.x&&player.x-12<s.x+s.w&&player.y>s.y&&player.y-54<s.y+s.h;}
-function physics(dt){
-  clock+=dt;dayTime+=dt;notice=Math.max(0,notice-dt);hurt=Math.max(0,hurt-dt);balance=Math.max(0,balance-dt*.18);
-  if(balance<=0){damage(0);return;}
-  for(const s of solids){s.dx=0;if(s.kind==='moving'){const old=s.x;s.x=s.base+Math.sin(clock*1.5+s.phase)*35;s.dx=s.x-old;}}
-  if(player.riding&&player.grounded)player.x+=player.riding.dx;
-  for(const s of slimes)if(!s.dead)s.x=s.base+(Math.sin(clock*(.95+Math.min(level,5)*.07)+s.phase)+1)*s.range/2;
-  coyote=player.grounded?.1:Math.max(0,coyote-dt);jumpBuffer=Math.max(0,jumpBuffer-dt);
-  const direction=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
-  const target=direction*320,accel=(direction?2600:2200)*dt;player.vx+=clamp(target-player.vx,-accel,accel);
-  if(jumpBuffer>0&&coyote>0){player.vy=-720;player.grounded=false;player.riding=null;jumpBuffer=0;coyote=0;burst(player.x,player.y,'#fff2cc');}
-  player.x=clamp(player.x+player.vx*dt,15,WORLD-25);
-  for(const s of solids)if(s.kind!=='ledge'&&s.kind!=='moving'&&overlap(s)){if(player.vx>0)player.x=s.x-12;else if(player.vx<0)player.x=s.x+s.w+12;player.vx=0;}
-  const oldY=player.y;player.vy+=1850*dt;player.y+=player.vy*dt;player.grounded=false;player.riding=null;
-  for(const s of solids){
-    if(player.x+12<=s.x||player.x-12>=s.x+s.w)continue;
-    if(player.vy>=0&&oldY<=s.y+.5&&player.y>=s.y){player.y=s.y;player.vy=0;player.grounded=true;player.riding=s;}
-    else if(s.kind!=='ledge'&&s.kind!=='moving'&&player.vy<0&&oldY-54>=s.y+s.h&&player.y-54<=s.y+s.h){player.y=s.y+s.h+54;player.vy=10;if(s.kind==='gift'&&!s.used){s.used=true;score+=75;balance=Math.min(100,balance+5);burst(s.x+s.w/2,s.y);}}
-  }
-  if(player.y>H+100){damage(20,true);return;}
-  for(const c of coins)if(!c.taken&&Math.abs(c.x-player.x)<25&&Math.abs(c.y-(player.y-30))<37){c.taken=true;collected++;score+=25;balance=Math.min(100,balance+1.5);burst(c.x,c.y);}
-  for(const s of slimes)if(!s.dead&&Math.abs(player.x-s.x)<28&&player.y>s.y-26&&player.y-50<s.y){if(player.vy>0&&oldY<=s.y-18){s.dead=true;player.y=s.y-26;player.vy=-530;score+=50;burst(s.x,s.y-15,'#b7dd9f');}else damage(15);}
-  if(mode!=='run')return;
-  for(const p of puddles)if(player.x+8>p.x&&player.x-8<p.x+p.w&&player.y>FLOOR-8&&player.y<FLOOR+25)damage(15);
-  if(mode!=='run')return;
-  for(const x of [3080,5510])if(player.grounded&&Math.abs(player.x-x)<24){player.vy=-900;player.grounded=false;burst(x,FLOOR,'#d8c3f1');}
-  for(const f of flags)if(!f.active&&player.x>=f.x&&player.y<=FLOOR+5){f.active=true;checkpoint=f.x+30;score+=100;balance=Math.min(100,balance+8);announce('Checkpoint! '+flags.filter(q=>q.active).length+' / 3');burst(f.x,FLOOR-70,'#f5cf69');}
-  if(player.x>farthest){score+=(player.x-farthest)*.04;farthest=player.x;}
-  camera+= (clamp(player.x-300,0,WORLD-W)-camera)*Math.min(1,dt*7);
-  particles=particles.filter(p=>p.life>0);for(const p of particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;}
-  if(player.x>=GOAL&&player.grounded)beginDate();
+function burst(x,y,color='#e7a4b0'){for(let i=0;i<12;i++)particles.push({x,y,vx:Math.cos(i)*35,vy:-20+Math.sin(i)*30,life:1,color});}
+function blocked(x,y){return ((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1 && !(y>=369&&y<=431);}
+function walk(dt){
+  clock+=dt;dayTime+=dt;notice=Math.max(0,notice-dt);rain.x=1160+Math.sin(clock*.35)*65;rain.y=440+Math.sin(clock*.27)*45;
+  const x=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
+  const y=Number(keys.has('KeyS')||keys.has('ArrowDown'))-Number(keys.has('KeyW')||keys.has('ArrowUp'));
+  const length=Math.hypot(x,y)||1,speed=keys.has('Space')?135:180;player.vx=x/length*speed;player.vy=y/length*speed;
+  const nextX=clamp(player.x+player.vx*dt,35,WORLD-45),nextY=clamp(player.y+player.vy*dt,170,MAP_H-70);
+  if(!blocked(nextX,player.y))player.x=nextX;
+  if(!blocked(player.x,nextY))player.y=nextY;
+  balance=Math.max(0,balance-dt*(.12+(distance(player,rain)<rain.r&&!keys.has('Space')?5:0)));
+  if(balance<=0){mode='over';keys.clear();showOverlay('Evenings need<br><em>a little rest.</em>','GG: Take care of yourself, too.<br>Let’s take another little walk.','Try another evening ♡','A FRESH START');}
+  if(player.x>680&&messageStage===0){messageStage=1;announce('GG: I’ll be the one smiling when you get here.',4);}
+  camera+=(clamp(player.x-W/2,0,WORLD-W)-camera)*Math.min(1,dt*7);cameraY+=(clamp(player.y-300,0,MAP_H-H)-cameraY)*Math.min(1,dt*7);
+  particles=particles.filter(p=>p.life>0);for(const p of particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
 }
 function update(dt){
   if(paused||document.hidden||mode==='ready'||mode==='over')return;
-  if(mode==='date'){clock+=dt;sceneTime=Math.min(20,sceneTime+dt);if(sceneTime>=20)finishDate();}else{let remaining=dt;while(remaining>0&&mode==='run'){const step=Math.min(remaining,1/120);physics(step);remaining-=step;}}
+  if(mode==='date'){clock+=dt;sceneTime=Math.min(20,sceneTime+dt);if(sceneTime>=20)finishDate();}
+  else{let remaining=dt;while(remaining>0&&mode==='walk'){const step=Math.min(remaining,1/60);walk(step);remaining-=step;}}
   ui.announcement.classList.toggle('visible',notice>0);refresh();
 }
 // All artwork is drawn locally; no images, fonts, or network requests.
@@ -107,7 +86,7 @@ function text(value,x,y,size=14,color='#304d3e',font='Arial'){ctx.font=(font==='
 function person(x,y,female=false,scale=1,seated=false,side=1,happy=true){
   ctx.save();ctx.translate(x,y);ctx.scale(scale*side,scale);
   oval(0,2,22,5,'#344e3c18');
-  const walk=mode==='run'&&!female&&player.vx?Math.sin(clock*14)*7:0;
+  const walk=mode==='walk'&&!female&&(player.vx||player.vy)?Math.sin(clock*14)*7:0;
   if(seated){line(-8,-24,-19,-14,'#344858',7);line(-19,-14,-18,0,'#344858',7);line(7,-24,16,-15,'#344858',7);line(16,-15,17,0,'#344858',7);}else{line(-7,-23,-9-walk,-3,'#344858',7);line(7,-23,9+walk,-3,'#344858',7);}
   line(-13-walk,0,-5-walk,0,'#fff9e9',5);line(13+walk,0,20+walk,0,'#fff9e9',5);
   if(female){oval(0,-59,16,22,'#654435');ctx.fillStyle='#d78c85';ctx.beginPath();ctx.moveTo(-10,-43);ctx.lineTo(11,-43);ctx.lineTo(18,-20);ctx.lineTo(-17,-20);ctx.fill();}else box(-13,-45,26,26,'#789b72',6);
@@ -172,54 +151,59 @@ function dateScene(){
   }
   box(330,485,300,4,sceneIndex===2?'#596176':'#d2cbb7',2);box(330,485,300*t/20,4,'#be8678',2);
 }
-function star(x,y,r=10,color='#f5c24e'){
-  ctx.fillStyle=color;ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,k=i%2?r*.45:r;const px=x+Math.cos(a)*k,py=y+Math.sin(a)*k;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();ctx.fill();
+function blossom(x,y,color='#eab0b9',size=9){
+  line(x,y+5,x-2,y+22,'#7e9f7b',2);for(let i=0;i<5;i++)oval(x+Math.cos(i*1.257)*size*.65,y+Math.sin(i*1.257)*size*.65,size*.5,size*.5,color);oval(x,y,size*.3,size*.3,'#f9e5a9');
 }
+function lantern(x,y){
+  oval(x,y-90,37,37,'#ffe5b322');line(x,y,x,y-110,'#977887',4);line(x,y-110,x+20,y-110,'#977887',3);box(x+9,y-107,24,30,'#ffe5b3',7);box(x+6,y-110,30,5,'#a57f89',3);
+}
+function bench(x,y){box(x-50,y-12,100,13,'#b39585',4);box(x-50,y-43,100,26,'#c7aa96',5);line(x-38,y,x-38,y+13,'#8e8176',4);line(x+38,y,x+38,y+13,'#8e8176',4);}
 function worldDraw(){
-  const zone=Math.floor(player.x/2250),theme=(zone+level-1)%3;
-  const sky=['#bfe7ed','#cddedc','#e9c3c6'][theme],hill=['#90bd9b','#92b8a6','#aba5b9'][theme];
-  box(0,0,W,H,sky);oval(805-camera*.025,80,40,40,'#fff0bc');
-  for(let i=-1;i<8;i++){let x=i*250-(camera*.16)%250;oval(x,95+(i%3)*22,49,17,'#ffffffa0');oval(x+30,85+(i%3)*22,31,23,'#ffffffa0');}
-  for(let i=-1;i<7;i++){const x=i*310-(camera*.3)%310;oval(x,430,230,180,hill);oval(x+110,440,180,125,'#b6cd9e');}
-  ctx.save();ctx.translate(-Math.floor(camera),0);
-  // Signs and distinct scenery mark the three parts of the long route.
-  for(let x=120;x<WORLD;x+=420){
-    if(x<camera-100||x>camera+W+100)continue;
-    if(x<2200)tree(x,430);
-    else if(x<4400){
-      box(x-6,310,12,120,'#7d9d94',4);box(x-17,294,34,27,'#f4e5ae',5);box(x-21,289,42,7,'#719286',3);
-      box(x+45,350,90,65,'#adc4b6',38);box(x+55,360,70,55,'#c6d8cc',30);text('✿',x+90,349,22,'#d98e8b');
-    }else{
-      box(x-42,340,84,90,'#b1adb9',5);box(x-49,333,98,12,'#ece3d3',4);
-      for(const dx of [-23,0,23]){box(x+dx-6,358,12,22,'#eadab5',4);box(x+dx-6,393,12,22,'#d9d1ce',4);}
-      box(x-21,311,42,22,'#c58c7d',5);for(const dx of [-10,0,10]){line(x+dx,315,x+dx,298,'#819c7d',2);text('✿',x+dx,298,17,dx?'#f7dfa2':'#e8adac');}
-    }
+  const theme=(level-1)%3,bg=['#f4ded6','#ddd5e3','#c6cddb'][theme];box(0,0,W,H,bg);
+  ctx.save();ctx.translate(-Math.floor(camera),-Math.floor(cameraY));
+  box(0,0,WORLD,MAP_H,['#d7dfcc','#cfd7d4','#b9cbc8'][theme]);
+  // Curving garden paths replace platforms and block courses.
+  ctx.strokeStyle='#e9d9c6';ctx.lineWidth=94;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(60,435);ctx.bezierCurveTo(200,420,240,500,400,480);ctx.bezierCurveTo(510,460,510,400,640,400);ctx.lineTo(970,400);ctx.bezierCurveTo(1060,400,920,240,1030,245);ctx.bezierCurveTo(1170,250,1160,520,1330,500);ctx.bezierCurveTo(1510,500,1540,370,1820,390);ctx.stroke();
+  for(let i=0;i<80;i++){const x=(i*139)%WORLD,y=175+(i*67)%450;if(y<290||y>560)blossom(x,y,i%2?'#e8b4b4':'#e5d2ab',4);}
+  oval(pond.x,pond.y,pond.rx+9,pond.ry+9,'#b9cdbf');oval(pond.x,pond.y,pond.rx,pond.ry,'#9cbfc3');
+  for(let i=0;i<11;i++)line(680+i*23,345+(i%4)*38+Math.sin(clock+i)*3,699+i*23,345+(i%4)*38,'#d6e3db',2);
+  for(const [x,y] of [[725,330],[860,460]]){oval(x,y,15,7,'#86aa92');blossom(x+3,y-2,'#eed1d4',6);}
+  box(620,370,340,60,'#bd9d84',7);for(let x=626;x<960;x+=22)line(x,372,x,429,'#e3c5a8',2);
+  line(620,367,960,367,'#9a7c71',4);line(620,432,960,432,'#9a7c71',4);
+  for(const x of [625,685,895,955]){line(x,365,x,346,'#9a7c71',4);line(x,435,x,451,'#9a7c71',4);}
+  for(const [x,y] of [[140,280],[440,195],[650,560],[1090,180],[1480,550],[1630,210],[1830,580]]){tree(x,y);oval(x,y-100,48,42,'#e7b8bd');oval(x+18,y-116,25,27,'#efc6c6');}
+  for(const [x,y] of [[270,440],[1040,340],[1500,440],[1680,320]])lantern(x,y);
+  for(const n of notes){bench(n.x,n.y);box(n.x-12,n.y-41,24,16,n.read?'#e0c6c0':'#fff5df',3);line(n.x-10,n.y-39,n.x,n.y-32,'#bd9d9d',1);line(n.x,n.y-32,n.x+10,n.y-39,'#bd9d9d',1);text(n.read?'A little memory':'✉ E · Read me',n.x,n.y-63,12,'#806d79');}
+  for(const f of flowers){
+    oval(f.x,f.y+5,28,11,'#acc29f');
+    if(!f.taken){blossom(f.x,f.y-13,f.color,12);blossom(f.x-14,f.y-3,f.color,8);blossom(f.x+14,f.y-5,f.color,8);heart(f.x,f.y-45+Math.sin(clock*2)*3,16);text('E · Pick',f.x,f.y+32,12,'#866b77');}else text('♡',f.x,f.y,17,'#8eaa89');
   }
-  for(const [x,label] of [[180,'MEADOW RUN →'],[2200,'THE CANAL →'],[4410,'SKY GARDENS →']]){box(x-5,330,7,100,'#a17d5c');box(x-75,318,150,32,'#fff2cd',6);text(label,x,339,12);}
-  for(const s of solids){
-    if(s.x+s.w<camera-50||s.x>camera+W+50)continue;
-    if(s.kind==='ground'){
-      box(s.x,s.y,s.w,s.h,s.x>4300?'#ad9b9c':s.x>2200?'#b8b39c':'#c4956b');box(s.x,s.y,s.w,14,s.x>4300?'#b895a6':'#6f9b65',4);box(s.x,s.y+14,s.w,8,'#9ebe79');
-      for(let x=s.x+18;x<s.x+s.w;x+=44){if(x<camera-20||x>camera+W+20)continue;box(x,s.y+32,9,5,'#b2825d',2);box(x+16,s.y+56,6,5,'#e0b687',2);}
-    }else if(s.kind==='crate'||s.kind==='gift'){
-      box(s.x,s.y,s.w,s.h,s.kind==='gift'?(s.used?'#b69b76':'#e6b65b'):'#c8976d',5);
-      line(s.x+5,s.y+5,s.x+s.w-5,s.y+5,'#fff1c0',2);
-      if(s.kind==='gift')text(s.used?'✓':'★',s.x+s.w/2,s.y+16,15,s.used?'#806e55':'#fff9df');
-      else{line(s.x+8,s.y+10,s.x+s.w-8,s.y+s.h-10,'#aa7755',3);line(s.x+s.w-8,s.y+10,s.x+8,s.y+s.h-10,'#aa7755',3);}
-    }else{box(s.x,s.y,s.w,s.h,s.kind==='moving'?'#a28bbb':'#7aa38b',6);box(s.x+3,s.y+2,s.w-6,4,'#e4efc5',2);if(s.kind==='moving')text('↔',s.x+s.w/2,s.y+14,13,'#fff5de');}
+  // A small passing shower asks for an umbrella, rather than a jump.
+  oval(rain.x,rain.y-130,76,23,'#a6a9bf55');oval(rain.x-30,rain.y-142,37,25,'#b0b2c555');
+  for(let i=0;i<16;i++){const x=rain.x-65+(i*37)%130,y=rain.y-115+((clock*90+i*23)%150);line(x,y,x-3,y+9,'#839cb46a',1.5);}
+  text('passing shower',rain.x,rain.y-170,11,'#7d7d96');
+  // Strings of lights lead to GG's rose arch.
+  ctx.strokeStyle='#a28d8c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(1540,220);ctx.quadraticCurveTo(1690,290,1860,220);ctx.stroke();
+  for(let i=0;i<10;i++){const x=1540+i*35,y=220+Math.sin(i/9*Math.PI)*35;oval(x,y,10,10,'#ffedb344');oval(x,y,4,5,'#fff0bb');}
+  line(GOAL-55,415,GOAL-55,292,'#a6ad8e',8);line(GOAL+55,415,GOAL+55,292,'#a6ad8e',8);
+  ctx.strokeStyle='#a6ad8e';ctx.lineWidth=8;ctx.beginPath();ctx.arc(GOAL,292,55,Math.PI,0);ctx.stroke();
+  for(let i=0;i<9;i++)blossom(GOAL+Math.cos(Math.PI+i*Math.PI/8)*55,292+Math.sin(Math.PI+i*Math.PI/8)*55,'#d898a8',9);
+  person(GOAL,390,true,1.08,false,-1);text('GG',GOAL,294,19,'#9d647c');heart(GOAL+28,307+Math.sin(clock*2)*4,19);
+  // Character is larger than before, with a bouquet that grows as you collect.
+  person(player.x,player.y,false,1.12,false,player.vx<0?-1:1);
+  for(let i=0;i<collected;i++)blossom(player.x+18+(i-1)*6,player.y-35-(i%2)*6,flowers[i].color,5);
+  if(keys.has('Space')&&mode==='walk'){
+    line(player.x+15,player.y-30,player.x+15,player.y-103,'#7c6a7a',2);
+    ctx.fillStyle='#ba879f';ctx.beginPath();ctx.arc(player.x+15,player.y-101,45,Math.PI,0);ctx.closePath();ctx.fill();line(player.x-30,player.y-101,player.x+60,player.y-101,'#e7b9c6',2);heart(player.x+15,player.y-114,15);
   }
-  // Water below gaps makes the edges easy to read.
-  for(let i=0;i<solids.length-1;i++){const a=solids[i],b=solids[i+1];if(a.kind==='ground'&&b.kind==='ground'&&b.x>a.x+a.w){const x=a.x+a.w,w=b.x-x;box(x,487,w,13,'#79b6c0');for(let q=0;q<w;q+=24)line(x+q,488+Math.sin(clock*3+q)*2,x+q+12,488,'#cae7db',2);}}
-  for(const c of coins)if(!c.taken&&c.x>camera-30&&c.x<camera+W+30){oval(c.x,c.y+Math.sin(clock*4+c.x)*3,12,12,'#fff4c470');star(c.x,c.y+Math.sin(clock*4+c.x)*3,10);}
-  for(const p of puddles){oval(p.x+p.w/2,FLOOR-2,p.w/2,7,'#80b9ca');text('~',p.x+p.w/2,FLOOR-3,16,'#e1f1e9');}
-  for(const x of [3080,5510]){box(x-23,FLOOR-9,46,9,'#b39bc6',4);text('↟',x,FLOOR-12,22,'#84669d');}
-  for(const s of slimes)if(!s.dead&&s.x>camera-40&&s.x<camera+W+40){oval(s.x,s.y-13,21,16+Math.sin(clock*6)*2,'#b4ce88');oval(s.x-6,s.y-17,3,4,'#3c5c44');oval(s.x+7,s.y-17,3,4,'#3c5c44');line(s.x-4,s.y-8,s.x+4,s.y-8,'#749563',2);}
-  for(const f of flags){line(f.x,FLOOR,f.x,300,'#f6edcf',5);box(f.x+2,302,55,34,f.active?'#cc837f':'#8ca991',3);text(f.active?'✓':'⚑',f.x+26,325,20,'#fff8de');text('CHECKPOINT',f.x+20,282,10,'#44614d');}
-  box(GOAL-80,330,180,100,'#f2dfb2',12);box(GOAL-95,319,210,15,'#c58b7f',6);box(GOAL-54,343,125,26,'#fff7e4',5);text('YOU MADE IT ♡',GOAL+8,361,12);person(GOAL+35,FLOOR,true,1.12,false,-1);text('GG',GOAL+35,319,19,'#9b5d63');
-  if(hurt<=0||Math.floor(hurt*12)%2===0)person(player.x,player.y,false,.92,false,player.vx<-5?-1:1);
-  for(const p of particles)oval(p.x,p.y,3,3,p.color);
+  for(const p of particles)heart(p.x,p.y,10*p.life);
+  for(let i=0;i<18;i++){const x=(i*147+clock*14)%WORLD,y=180+(i*83+clock*11)%450;oval(x,y,3,1.8,'#efd1d5');}
+  const target=nearest();if(mode==='walk'&&target){box(player.x-76,player.y+17,152,25,'#fff5e9ee',12);text(target.kind==='flower'?'E · Add to bouquet':target.kind==='note'?'E · A little note':'E · Talk to GG',player.x,player.y+34,12,'#8d647b');}
   ctx.restore();
-  if(mode==='run'){box(16,17,148,25,'#fff9e5dd',12);text(['01 · MEADOWS','02 · THE CANAL','03 · SKY GARDENS'][Math.min(2,zone)],90,34,11);}
+  // A tiny map makes the short walk easy to navigate.
+  box(W-236,16,220,83,'#fff8e7e8',12);text('YOUR LITTLE WALK',W-126,35,10,'#876c7c');line(W-218,65,W-34,65,'#d8b8b9',3);
+  for(const f of flowers){const x=W-218+f.x/WORLD*184;heart(x,62,f.taken?10:14);}
+  oval(W-218+player.x/WORLD*184,78,4,4,'#577f70');text('GG',W-40,57,10,'#9d647c');
 }
 function draw(){ctx.clearRect(0,0,W,H);if(mode==='date')dateScene();else worldDraw();}
 function frame(now){const dt=last?Math.min((now-last)/1000,.05):0;last=now;update(dt);draw();requestAnimationFrame(frame);}
