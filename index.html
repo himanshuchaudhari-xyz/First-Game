@@ -10,7 +10,7 @@
 <body>
   <header><a class="brand" href="./">rizzler<span>✳</span></a><span class="edition">A LITTLE WALK TO GG</span><button id="pause" type="button">Ⅱ Pause</button></header>
   <main>
-    <div class="intro"><div><p class="eyebrow">LITTLE GESTURES. LOVELY EVENINGS.</p><h1>On my way to you.</h1><p>A few flowers, a little drizzle, and GG at your favourite spot.</p></div><div class="badge">JUST US TWO<br><b>SWEET MOMENTS</b><span>♡</span></div></div>
+    <div class="intro"><div><p class="eyebrow">LITTLE GESTURES. LOVELY EVENINGS.</p><h1>On my way to you.</h1><p>A few thoughtful plans. A little surprise. A very happy GG.</p></div><div class="badge">JUST US TWO<br><b>SWEET MOMENTS</b><span>♡</span></div></div>
     <section class="game" aria-label="Rizzler romantic garden walk">
       <div class="hud">
         <div><small>EVENING</small><strong id="level">01</strong></div>
@@ -20,15 +20,16 @@
       </div>
       <div class="objectives" id="objectives" aria-label="Today's objectives"></div>
       <div class="stage">
-        <canvas id="canvas" width="960" height="500" aria-label="Garden walk. Move in four directions with WASD or arrows. Pick three marked flowers with E, read optional notes, and meet GG at the rose arch on the right. Hold Space for an umbrella in the rain."></canvas>
-        <div id="overlay" class="overlay"><div class="overlay-card"><span class="pill" id="pill">A LITTLE LOVE STORY</span><h2 id="title">For the little<br><em>things we do.</em></h2><p id="message">Gather three flowers on a short sunset stroll.<br>Read little notes, cross the bridge, and meet GG.<br><b>WASD / arrows to walk · E to pick / read · Hold Space for an umbrella.</b></p><button class="primary" id="play">Let’s take a walk ♡</button><p class="hint">ENTER TO START · ESC TO PAUSE</p></div></div>
+        <canvas id="canvas" width="960" height="500" aria-label="Prepare a surprise for GG. Move with WASD or arrows. Visit numbered stops in order and press E to prepare each item. Complete all three stops, then meet GG at the rose arch."></canvas>
+        <div id="overlay" class="overlay"><div class="overlay-card"><span class="pill" id="pill">A LITTLE LOVE STORY</span><h2 id="title">For the little<br><em>things we do.</em></h2><p id="message">Order her burger, plan a date, or fuel a sunset drive.<br>Complete three useful stops, then surprise GG.<br><b>WASD / arrows to walk · E to prepare · Follow stops 1 → 2 → 3.</b></p><button class="primary" id="play">Let’s take a walk ♡</button><p class="hint">ENTER TO START · ESC TO PAUSE</p></div></div>
+        <div id="task-panel" class="task-panel" role="dialog" aria-label="Prepare a surprise" hidden></div>
         <div id="announcement" class="announcement" role="status"></div>
         <button id="skip" class="skip" hidden>Skip scene →</button>
       </div>
       <div class="game-footer"><span id="status" role="status">READY WHEN YOU ARE</span><span id="scene-note">A LITTLE EFFORT. A LITTLE TIME TOGETHER.</span></div>
     </section>
-    <div class="instructions"><div><span class="key wide">WASD / ↑↓←→</span><span class="label">Stroll</span></div><div><span class="key">E</span><span class="label">Pick / read / talk</span></div><div><span class="key wide">SPACE</span><span class="label">Hold umbrella</span></div><p>Take your time. <b>She’s worth the little walk.</b></p></div>
-    <div class="touch" aria-label="Touch controls"><div class="dpad"><button data-key="ArrowUp" aria-label="Walk up">↑</button><button data-key="ArrowLeft" aria-label="Walk left">←</button><button data-key="ArrowDown" aria-label="Walk down">↓</button><button data-key="ArrowRight" aria-label="Walk right">→</button></div><button data-key="KeyE">Pick / talk</button><button data-key="Space">Hold ☂</button></div>
+    <div class="instructions"><div><span class="key wide">WASD / ↑↓←→</span><span class="label">Stroll</span></div><div><span class="key">E</span><span class="label">Prepare / talk</span></div><div><span class="key wide">1 / 2</span><span class="label">Choose an option</span></div><p>Take your time. <b>She’s worth the little walk.</b></p></div>
+    <div class="touch" aria-label="Touch controls"><div class="dpad"><button data-key="ArrowUp" aria-label="Walk up">↑</button><button data-key="ArrowLeft" aria-label="Walk left">←</button><button data-key="ArrowDown" aria-label="Walk down">↓</button><button data-key="ArrowRight" aria-label="Walk right">→</button></div><button data-key="KeyE">Prepare / talk</button></div>
   </main><footer><span>MADE FOR A LITTLE ESCAPE</span><span>STARRING YOU & GG ♡</span></footer>
   <script src="game.js"></script>
 </body>
