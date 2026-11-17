@@ -3,25 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f9f5ee">
-  <title>Rizzler — Dodge the love</title>
+  <meta name="theme-color" content="#f9f6ef">
+  <title>Rizzler — A little time for GG</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header><a class="brand" href="./">rizzler<span>✳</span></a><span class="edition">A LITTLE ARCADE CRUSH</span><button id="soundless" type="button" title="Pause or resume">Ⅱ <span>Pause</span></button></header>
+  <header><a class="brand" href="./">rizzler<span>✳</span></a><span class="edition">THE CAMPUS CHAPTER</span><button id="pause" type="button">Ⅱ Pause</button></header>
   <main>
-    <div class="intro"><div><p class="eyebrow">BIG CHARM. QUICK FEET.</p><h1>Dodge the love.</h1><p>Hearts are flying. Keep your cool.</p></div><div class="badge">100% CHARM<br><b>0% DRAMA</b><span>↙</span></div></div>
-    <section class="game" aria-label="Rizzler arcade game">
-      <div class="hud"><div><small>LEVEL</small><strong id="level">01</strong></div><div><small>SCORE</small><strong id="score">00000</strong></div><div><small>LIVES</small><strong id="lives" class="hearts">♥ ♥ ♥</strong></div><div class="timer"><small>NEXT LEVEL</small><strong id="time">20<span>s</span></strong></div></div>
-      <div class="stage"><canvas id="canvas" width="960" height="500" aria-label="Move with A and D or arrows. Jump with Space or Up."></canvas>
-        <div id="overlay" class="overlay"><div class="overlay-card"><span class="pill" id="pill">THE CHASE IS ON</span><h2 id="title">Meet your<br><em>heart dodger.</em></h2><p id="message">A little attention goes a long way.<br>Three lives. Endless admirers. Stay on your toes.</p><button class="primary" id="play">Let's play <span>↗</span></button><p class="hint" id="hint">PRESS ENTER TO START</p></div></div>
-        <div id="announcement" class="announcement" role="status"></div>
+    <div class="intro"><div><p class="eyebrow">CLASSES. FRIENDS. A LITTLE LOVE.</p><h1>A little time for GG.</h1><p>Make the day count. Save a moment for each other.</p></div><div class="badge">BUSY DAYS<br><b>SWEET MOMENTS</b><span>♡</span></div></div>
+    <section class="game" aria-label="Rizzler campus game">
+      <div class="hud">
+        <div><small>DAY / LEVEL</small><strong id="level">01</strong></div>
+        <div><small>SCORE</small><strong id="score">00000</strong></div>
+        <div class="balance"><small>BALANCE <span id="health">100%</span></small><div id="meter" role="progressbar" aria-label="Balance" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="fill"></i></div></div>
+        <div class="timer"><small id="clock-label">DAY TIME</small><strong id="time">0s</strong></div>
       </div>
-      <div class="game-footer"><span><i></i><span id="status">READY WHEN YOU ARE</span></span><span>LOVE IS IN THE AIR. LITERALLY.</span></div>
+      <div class="objectives" id="objectives" aria-label="Today's objectives"></div>
+      <div class="stage">
+        <canvas id="canvas" width="960" height="500" aria-label="Campus: class on the left, library in the middle, friends by the cafe, and GG on the right. Move with A/D or arrows, jump with Space, hold E near a marker to interact."></canvas>
+        <div id="overlay" class="overlay"><div class="overlay-card"><span class="pill" id="pill">A SMALL CAMPUS LOVE STORY</span><h2 id="title">Busy day.<br><em>Sweet ending.</em></h2><p id="message">Attend class, study, and catch up with friends.<br>Then spend time with GG to refill your Balance.<br><b>Move with A/D · Space to jump · Hold E at a marker.</b></p><button class="primary" id="play">Start the day ↗</button><p class="hint">ENTER TO START · ESC TO PAUSE</p></div></div>
+        <div id="announcement" class="announcement" role="status"></div>
+        <button id="skip" class="skip" hidden>Skip scene →</button>
+      </div>
+      <div class="game-footer"><span id="status" role="status">READY WHEN YOU ARE</span><span id="scene-note">A LITTLE EFFORT. A LITTLE TIME TOGETHER.</span></div>
     </section>
-    <div class="instructions"><div><span class="key">A</span><span class="key">D</span><span class="or">/</span><span class="key">←</span><span class="key">→</span><span class="label">Move</span></div><div><span class="key wide">SPACE</span><span class="or">/</span><span class="key">↑</span><span class="label">Jump</span></div><p>Catch feelings? <b>Try dodging them.</b></p></div>
-    <div class="touch"><button data-key="ArrowLeft" aria-label="Move left">←</button><button data-key="ArrowRight" aria-label="Move right">→</button><button data-key="Space" aria-label="Jump">Jump ↑</button></div>
-  </main><footer><span>MADE FOR A LITTLE ESCAPE</span><span>NO BROKEN HEARTS. JUST HIGH SCORES. ♡</span></footer>
+    <div class="instructions"><div><span class="key">A</span><span class="key">D</span><span class="or">/</span><span class="key">←</span><span class="key">→</span><span class="label">Move</span></div><div><span class="key wide">SPACE</span><span class="label">Jump</span></div><div><span class="key">E</span><span class="label">Hold to interact</span></div><p>No perfect days. <b>Just time well spent.</b></p></div>
+    <div class="touch" aria-label="Touch controls"><button data-key="ArrowLeft" aria-label="Move left">←</button><button data-key="ArrowRight" aria-label="Move right">→</button><button data-key="Space">Jump</button><button data-key="KeyE">Hold E</button></div>
+  </main><footer><span>MADE FOR A LITTLE ESCAPE</span><span>STARRING YOU & GG ♡</span></footer>
   <script src="game.js"></script>
 </body>
 </html>
